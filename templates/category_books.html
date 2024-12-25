@@ -3,19 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/static/style.css">
-    <title>Book Haven</title>
+    <title>Books in {{ category }} - Book Haven</title>
     <style>
-        /* General Styles */
         body {
-            font-family: 'Roboto', Arial, sans-serif;
+            font-family: Arial, sans-serif;
+            text-align: center;
             margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            color: #333;
         }
 
-        /* Header */
+        /* Header and Navigation */
         header {
             background-color: #232f3e;
             color: white;
@@ -45,7 +41,7 @@
             text-decoration: underline;
         }
 
-        /* Main Section */
+        /* Main Content */
         main {
             padding: 20px 10%;
             display: flex;
@@ -53,36 +49,49 @@
             gap: 40px;
         }
 
-        /* Search Section */
-        #search {
+        /* Category Books Section */
+        section {
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
-        #search h2 {
-            margin: 0 0 15px;
+        section h2 {
+            font-size: 2em;
+            color: #232f3e;
+            margin-bottom: 20px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 15px;
+        }
+
+        li h3 {
+            margin: 0;
             font-size: 1.5em;
             color: #232f3e;
         }
 
-        #search form {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
+        li p {
+            margin: 5px 0;
         }
 
-        #search input {
-            padding: 10px;
-            width: 400px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1em;
+        /* Form and Button Styling */
+        form {
+            margin-top: 10px;
         }
 
-        #search button {
+        button {
             padding: 10px 20px;
             background-color: #232f3e;
             color: white;
@@ -91,54 +100,8 @@
             cursor: pointer;
         }
 
-        #search button:hover {
+        button:hover {
             background-color: #1a1f26;
-        }
-
-        /* Recommendations Section */
-        #recommendations {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        #recommendations h2 {
-            margin: 0 0 15px;
-            font-size: 1.5em;
-            color: #232f3e;
-        }
-
-        #recommendations ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        #recommendations li {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease-in-out;
-        }
-
-        #recommendations li:hover {
-            transform: translateY(-5px);
-        }
-
-        #recommendations li h3 {
-            margin: 0 0 5px;
-            color: #232f3e;
-        }
-
-        #recommendations li p {
-            margin: 5px 0;
-            font-size: 0.9em;
-            color: #555;
         }
 
         /* Footer */
@@ -166,25 +129,17 @@
             <a href="{{ url_for('logout') }}">Logout</a>
             {% if username %}
             <a href="{{ url_for('user_page') }}" class="user-circle">
-                {{ username[0].upper() }}
+                {{ username[0].upper() }} <!-- Display first letter of username -->
             </a>
             {% endif %}
         </nav>
     </header>
-    
+
     <main>
-        <section id="search">
-            <h2>Find Your Next Favorite Book</h2>
-            <form action="/search" method="get">
-                <input type="text" name="query" placeholder="Search for books, authors, genres..." required>
-                <button type="submit">Search</button>
-            </form>
-        </section>
-        
-        <section id="recommendations">
-            <h2>Recommended for You</h2>
+        <section>
+            <h2>Books in {{ category }} Category</h2>
             <ul>
-                {% for book in recommended_books %}
+                {% for book in books %}
                 <li>
                     <h3>{{ book.title }}</h3>
                     <p><strong>Author:</strong> {{ book.author }}</p>
@@ -198,7 +153,7 @@
             </ul>
         </section>
     </main>
-    
+
     <footer>
         <p>&copy; 2024 Book Haven. All rights reserved.</p>
     </footer>

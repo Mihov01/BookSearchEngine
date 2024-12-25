@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>Book Categories</title>
+    <style>
+        /* Reuse the general styles */
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        header {
+            background-color: #232f3e;
+            color: white;
+            padding: 20px 10%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8em;
+        }
+
+        nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 1em;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        main {
+            padding: 20px 10%;
+        }
+
+        #categories {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #categories h2 {
+            margin-bottom: 15px;
+            color: #232f3e;
+        }
+
+        #categories ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        #categories li {
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        #categories li:hover {
+            transform: translateY(-5px);
+        }
+
+        #categories li a {
+            text-decoration: none;
+            color: #232f3e;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        #categories li a:hover {
+            color: #530b7a;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Book Haven</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="{{ url_for('categories') }}">Categories</a>
+            <a href="{{ url_for('favorites') }}">Favorites</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </nav>
+    </header>
+    
+    <main>
+        <section id="categories">
+            <h2>Browse by Categories</h2>
+            <ul>
+                {% for category in categories %}
+                <li><a href="{{ url_for('category_books', category=category) }}">{{ category }}</a></li>
+                {% endfor %}
+            </ul>
+        </section>
+    </main>
+</body>
+</html>
+</html>

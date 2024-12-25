@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>Your Favorites</title>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        header {
+            background-color: #232f3e;
+            color: white;
+            padding: 20px 10%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8em;
+        }
+
+        nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 1em;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        main {
+            padding: 20px 10%;
+        }
+
+        #favorites {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #favorites h2 {
+            margin-bottom: 15px;
+            color: #232f3e;
+        }
+
+        #favorites table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        #favorites th, #favorites td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        #favorites th {
+            background-color: #232f3e;
+            color: white;
+        }
+
+        #favorites td button {
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #favorites td button:hover {
+            background-color: #c9302c;
+        }
+
+        #favorites p {
+            margin-top: 20px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Book Haven</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/categories">Categories</a>
+            <a href="/favorites">Favorites</a>
+            <a href="/logout">Logout</a>
+        </nav>
+    </header>
+    
+    <main>
+        <section id="favorites">
+            <h2>Your Favorite Books</h2>
+
+            {% if favorite_books %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Genre</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for book in favorite_books %}
+                    <tr>
+                        <td>{{ book.book_title }}</td>
+                        <td>{{ book.book_author }}</td>
+                        <td>{{ book.book_genre }}</td>
+                        <td>
+                            <form action="/favorites/remove/{{ book.id }}" method="POST">
+                                <button type="submit">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>You have no favorite books yet. Start adding some!</p>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

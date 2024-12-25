@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - Book Haven</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        form {
+            display: inline-block;
+            text-align: left;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        input {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Header and Navigation */
+        header {
+            background-color: #232f3e;
+            color: white;
+            padding: 20px 10%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8em;
+        }
+
+        nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 1em;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Main Content */
+        main {
+            padding: 20px 10%;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        /* User Profile Section */
+        #user-profile {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        #user-profile h2 {
+            margin-bottom: 20px;
+            font-size: 2em;
+            color: #232f3e;
+        }
+
+        /* Profile Info Section */
+        .profile-details {
+            display: flex;
+            gap: 40px;
+        }
+
+        .profile-info, .profile-preferences {
+            width: 48%;
+        }
+
+        .profile-info h3, .profile-preferences h3 {
+            color: #232f3e;
+            margin-bottom: 10px;
+        }
+
+        /* Preferences Form */
+        .update-preferences form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .update-preferences input {
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .update-preferences button {
+            padding: 10px 20px;
+            background-color: #232f3e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .update-preferences button:hover {
+            background-color: #1a1f26;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #232f3e;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: 30px;
+        }
+
+        footer p {
+            margin: 0;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Book Haven</h1>
+        <nav>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('categories') }}">Categories</a>
+            <a href="{{ url_for('favorites') }}">Favorites</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+
+            {% if username %}
+            <a href="{{ url_for('user_page') }}" class="user-circle">
+                {{ username[0].upper() }} <!-- Display first letter of username -->
+            </a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main>
+        <section id="user-profile">
+            <h2>Welcome, {{ user.username }}!</h2>
+
+            <div class="profile-details">
+                <div class="profile-info">
+                    <h3>User Information</h3>
+                    <p><strong>Username:</strong> {{ user.username }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p> <!-- You can add more details like email -->
+                </div>
+
+                <div class="profile-preferences">
+                    <h3>Your Preferences</h3>
+                    {% if user.preferences %}
+                        <ul>
+                            {% for key, value in user.preferences.items() %}
+                                <li><strong>{{ key }}:</strong> {{ value }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>You haven't set any preferences yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="update-preferences">
+                <h3>Update Your Preferences</h3>
+                <form action="{{ url_for('update_preferences') }}" method="POST">
+                    <label for="favorite_genres">Favorite Genres (comma-separated):</label><br>
+                    <input type="text" id="favorite_genres" name="favorite_genres" 
+                    value="{{ user.preferences['favorite_genres'] if user.preferences and 'favorite_genres' in user.preferences else '' }}" 
+                    placeholder="Enter genres"><br><br>
+
+                    <button type="submit">Save Preferences</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Book Haven. All rights reserved.</p>
+    </footer>
+</body>
+</html>
