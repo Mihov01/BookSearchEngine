@@ -25,6 +25,42 @@
             align-items: center;
         }
 
+        #popular-searches {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        #popular-searches h2 {
+            color: #232f3e;
+            margin-bottom: 10px;
+        }
+
+        #popular-searches ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        #popular-searches li a {
+            text-decoration: none;
+            color: #0073e6;
+            padding: 5px 10px;
+            background: #f1f8ff;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        #popular-searches li a:hover {
+            background: #cce4ff;
+        }
+
         header h1 {
             margin: 0;
             font-size: 1.8em;
@@ -180,6 +216,19 @@
                 <button type="submit">Search</button>
             </form>
         </section>
+
+        <section id="popular-searches">
+            <h2>Trending Searches</h2>
+            <ul>
+                {% if popular_searches %}
+                    {% for term in popular_searches %}
+                        <li><a href="{{ url_for('search', query=term) }}">{{ term }}</a></li>
+                    {% endfor %}
+                {% else %}
+                    <li>No trending searches available yet.</li>
+                {% endif %}
+            </ul>
+        </section>
         
         <section id="recommendations">
             <h2>Recommended for You</h2>
@@ -204,15 +253,6 @@
                         <button type="submit">Add to Favorites</button>
                     </form>
                 </li>
-                {% endfor %}
-            </ul>
-        </section>
-
-        <section id="popular-searches">
-            <h2>Popular Searches</h2>
-            <ul>
-                {% for search in popular_searches %}
-                <li>{{ search.search_query }} ({{ search.frequency }} times)</li>
                 {% endfor %}
             </ul>
         </section>

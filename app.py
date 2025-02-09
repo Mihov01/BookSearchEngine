@@ -8,7 +8,10 @@ from elasticsearch.helpers import bulk
 from datetime import datetime
 import pandas as pd
 import json
+import logging
 
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
@@ -79,6 +82,39 @@ def load_synonyms_from_csv(csv_file_path):
         raise ValueError("CSV file must have 'lemma' and 'synonyms' columns.")
 
     return [f"{row['lemma']} => {row['synonyms']}" for _, row in df.iterrows()]
+
+def log_search(query):
+    doc = {
+        "query": query,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+    es.index(index="search_logs", document=doc)
+    es.indices.refresh(index="search_logs")  # ✅ Force refresh
+
+def popular_searches(hours_interval=None):
+    from datetime import datetime, timedelta
+
+    time_filter = {"match_all": {}}
+    if hours_interval:
+        start_time = (datetime.utcnow() - timedelta(hours=hours_interval)).isoformat()
+        time_filter = {"range": {"timestamp": {"gte": start_time}}}
+
+    query = {
+        "query": time_filter,
+        "aggs": {
+            "popular_terms": {
+                "terms": {
+                    "field": "query",  # Changed from "query.keyword" to "query"
+                    "size": 5
+                }
+            }
+        }
+    }
+
+    response = es.search(index="search_logs", body=query)
+    print("Popular Search Response:", response, flush=True)
+
+    return [bucket["key"] for bucket in response.get("aggregations", {}).get("popular_terms", {}).get("buckets", [])]
 
 # Update synonym filter in Elasticsearch
 def update_synonym_filter(csv_file_path):
@@ -170,6 +206,7 @@ def populate_elasticsearch_from_json():
 
 # Search function using Elasticsearch
 def search_books(query):
+    log_search(query) 
     response = es.search(
         index="books",
         body={
@@ -196,9 +233,26 @@ def before_first_request():
     """Ensure Elasticsearch index is created and populated."""
     create_or_update_es_index()
     populate_elasticsearch_from_json()
+    create_search_logs_index() 
+
+def create_search_logs_index():
+    if not es.indices.exists(index="search_logs"):
+        es.indices.create(index="search_logs", body={
+            "mappings": {
+                "properties": {
+                    "query": {"type": "keyword"},
+                    "timestamp": {"type": "date"}
+                }
+            }
+        })
+        print("Created index: search_logs")
+    else:
+        print("Index 'search_logs' already exists.")
+
 
 # Routes for handling user actions
 def fuzzy_search_books(query):
+    log_search(query) 
     response = es.search(
         index="books",
         body={
@@ -282,10 +336,13 @@ def dashboard():
         user_id = session['user_id']
         user = User.query.get(user_id)
 
-        # Get recommended books based on user preferences or search history
         recommended_books = get_recommended_books(user)
+        popular_terms = popular_searches(hours_interval=24)
 
-        return render_template('dashboard.html', recommended_books=recommended_books, username=user.username)
+        # Debugging: Print popular terms to the console
+        print("Popular Searches:", popular_terms)
+
+        return render_template('dashboard.html', recommended_books=recommended_books, username=user.username, popular_searches=popular_terms)
     return redirect(url_for('login'))
 
 def get_recommended_books(user):
@@ -380,4 +437,4 @@ def update_preferences():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)
