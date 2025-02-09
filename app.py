@@ -26,6 +26,7 @@ migrate = Migrate(app, db)
 # Elasticsearch configuration
 ELASTICSEARCH_URL = os.getenv('ELASTICSEARCH_URL', 'http://elasticsearch:9200')
 es = Elasticsearch([ELASTICSEARCH_URL])
+index_name = "books"
 
 # User model
 class User(db.Model):
@@ -83,12 +84,13 @@ def load_synonyms_from_csv(csv_file_path):
 
     return [f"{row['lemma']} => {row['synonyms']}" for _, row in df.iterrows()]
 
+# Function to get user recommendations based on search hist
+
 def log_search(query):
-    doc = {
-        "query": query,
-        "timestamp": datetime.utcnow().isoformat()
-    }
-    es.index(index="search_logs", document=doc)
+    user_id = session.get('user_id')
+    new_search = SearchHistory(search_query=query, user_id=user_id)
+    db.session.add(new_search)
+    db.session.commit()
     es.indices.refresh(index="search_logs")  # ✅ Force refresh
 
 def popular_searches(hours_interval=None):
@@ -346,14 +348,31 @@ def dashboard():
     return redirect(url_for('login'))
 
 def get_recommended_books(user):
-    # Example function to fetch books based on user preferences
-    if user.preferences and 'favorite_genres' in user.preferences:
-        genres = user.preferences['favorite_genres']
-        recommended_books = Book.query.filter(Book.genre.any(genres)).all()  # Use 'any' for array matching
+    latest_search = SearchHistory.query.order_by(SearchHistory.search_date.desc()).first()
+    keyword = latest_search.search_query if latest_search else "Education"
+
+    if isinstance(keyword, str):  # Ensure keyword is a string
+        query = {
+            "query": {
+                "more_like_this": {
+                    "fields": ["title", "author", "description"],
+                    "like": keyword,
+                    "min_term_freq": 1,
+                    "max_query_terms": 12
+                }
+            }
+        }
+        response = es.search(index=index_name, body=query)
+        recommended_books = [{
+            "title": hit["_source"].get("title"),
+            "author": hit["_source"].get("author"),
+            "description": hit["_source"].get("description")
+        } for hit in response["hits"]["hits"]]
     else:
-        # Fetch a few random books if no preferences are set
-        recommended_books = Book.query.limit(5).all()
+        recommended_books = []
+
     return recommended_books
+
 
 @app.route('/logout')
 def logout():
