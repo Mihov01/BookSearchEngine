@@ -1,6 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+import os
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from sqlalchemy.dialects.postgresql import ARRAY
+from elasticsearch import Elasticsearch
+from elasticsearch.helpers import bulk
+from datetime import datetime
+import pandas as pd
+import json
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -13,20 +20,25 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+# Elasticsearch configuration
+ELASTICSEARCH_URL = os.getenv('ELASTICSEARCH_URL', 'http://elasticsearch:9200')
+es = Elasticsearch([ELASTICSEARCH_URL])
+
 # User model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)  # Use hashing for production!
     preferences = db.Column(db.JSON, default={})  # Ensure preferences defaults to an empty dict
+
 # Book model
 class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    author = db.Column(db.String(200), nullable=False)
+    title = db.Column(db.String(1000), nullable=False)
+    author = db.Column(db.String(1000), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    language = db.Column(db.String(50), nullable=True)
-    genre = db.Column(db.String(100), nullable=True)
+    language = db.Column(db.String(500), nullable=True)
+    genre = db.Column(ARRAY(db.String), nullable=True)  # Store genres as an array
     publication_date = db.Column(db.Date, nullable=True)
     isbn = db.Column(db.String(20), nullable=True)
     cover_image_url = db.Column(db.String(200), nullable=True)
@@ -55,10 +67,185 @@ class PopularSearch(db.Model):
     search_query = db.Column(db.String(500), unique=True, nullable=False)
     frequency = db.Column(db.Integer, default=1)
 
-# Routes remain the same
+# Load synonyms from CSV
+def load_synonyms_from_csv(csv_file_path):
+    if not os.path.exists(csv_file_path):
+        raise FileNotFoundError(f"CSV file not found: {csv_file_path}")
+
+    df = pd.read_csv(csv_file_path)
+    df.columns = df.columns.str.lower()
+
+    if "lemma" not in df.columns or "synonyms" not in df.columns:
+        raise ValueError("CSV file must have 'lemma' and 'synonyms' columns.")
+
+    return [f"{row['lemma']} => {row['synonyms']}" for _, row in df.iterrows()]
+
+# Update synonym filter in Elasticsearch
+def update_synonym_filter(csv_file_path):
+    synonyms = load_synonyms_from_csv(csv_file_path)
+
+    if es.indices.exists(index='books'):
+        es.indices.close(index='books')
+
+        es.indices.put_settings(
+            index='books',
+            body={
+                "settings": {
+                    "analysis": {
+                        "filter": {
+                            "synonym_filter": {
+                                "type": "synonym",
+                                "synonyms": synonyms
+                            }
+                        },
+                        "analyzer": {
+                            "synonym_analyzer": {
+                                "tokenizer": "standard",
+                                "filter": ["lowercase", "synonym_filter"]
+                            }
+                        }
+                    }
+                }
+            }
+        )
+        es.indices.open(index='books')
+        print("Synonym filter updated successfully.")
+    else:
+        print("Index 'books' does not exist.")
+
+# Elasticsearch Indexing for Books
+def create_or_update_es_index():
+    if not es.indices.exists(index='books'):
+        es.indices.create(index='books', ignore=400)
+
+    # Update synonyms
+    update_synonym_filter('synonyms.csv')
+
+    books = Book.query.all()
+    actions = [
+        {
+            "_index": "books",
+            "_id": book.id,
+            "_source": {
+                "title": book.title,
+                "author": book.author,
+                "description": book.description,
+                "language": book.language,
+                "genre": book.genre,
+                "publication_date": book.publication_date,
+                "isbn": book.isbn,
+                "cover_image_url": book.cover_image_url,
+            }
+        }
+        for book in books
+    ]
+    bulk(es, actions)
+    es.indices.refresh(index='books')  # Ensure the index is refreshed after updates
+
+def populate_elasticsearch_from_json():
+    import json
+
+    with open('gutenberg_books_processed.json', 'r') as file:
+        books = json.load(file)
+
+    actions = []
+    for book in books:
+        if 'title' in book:  # Ensure the record has a title
+            actions.append({
+                "_index": "books",
+                "_id": book['title'],  # Use the title as the unique identifier
+                "_source": {
+                    "title": book.get('title', ''),
+                    "author": book.get('author', ''),
+                    "description": book.get('description', ''),
+                    "language": book.get('language', ''),
+                    "genre": book.get('genre', []),
+                    "publication_date": book.get('publication_date', ''),
+                    "isbn": book.get('isbn', ''),
+                    "cover_image_url": book.get('cover_image_url', ''),
+                }
+            })
+
+    bulk(es, actions)
+
+# Search function using Elasticsearch
+def search_books(query):
+    response = es.search(
+        index="books",
+        body={
+            "query": {
+                "bool": {
+                    "should": [
+                        {
+                            "multi_match": {
+                                "query": query,
+                                "fields": ["title^3", "description^2", "author", "genre"],
+                                "fuzziness": "AUTO",
+                                "analyzer": "synonym_analyzer"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    )
+    return response['hits']['hits']
+
+@app.before_first_request
+def before_first_request():
+    """Ensure Elasticsearch index is created and populated."""
+    create_or_update_es_index()
+    populate_elasticsearch_from_json()
+
+# Routes for handling user actions
+def fuzzy_search_books(query):
+    response = es.search(
+        index="books",
+        body={
+            "query": {
+                "bool": {
+                    "should": [
+                        {
+                            "multi_match": {
+                                "query": query,
+                                "fields": ["title^3", "description^2", "author", "genre"],
+                                "fuzziness": "AUTO",
+                                "analyzer": "synonym_analyzer"
+                            }
+                        },
+                        {
+                            "fuzzy": {
+                                "title": {
+                                    "value": query,
+                                    "fuzziness": "AUTO",
+                                    "prefix_length": 2
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    )
+    return response['hits']['hits']
+
 @app.route('/')
 def home():
     return redirect(url_for('dashboard'))
+
+@app.route('/search', methods=['GET'])
+def search():
+    query = request.args.get('query', '')
+    if query:
+        search_results = search_books(query)
+        return render_template('search_results.html', query=query, results=search_results)
+    return render_template('search_form.html')
+
+@app.route('/book/<int:book_id>')
+def book_detail(book_id):
+    # Fetch the book details from the database
+    book = Book.query.get_or_404(book_id)
+    return render_template('book.html', book=book)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -105,7 +292,7 @@ def get_recommended_books(user):
     # Example function to fetch books based on user preferences
     if user.preferences and 'favorite_genres' in user.preferences:
         genres = user.preferences['favorite_genres']
-        recommended_books = Book.query.filter(Book.genre.in_(genres)).all()
+        recommended_books = Book.query.filter(Book.genre.any(genres)).all()  # Use 'any' for array matching
     else:
         # Fetch a few random books if no preferences are set
         recommended_books = Book.query.limit(5).all()
@@ -119,20 +306,30 @@ def logout():
 
 @app.route('/categories')
 def categories():
-    # Get all unique genres for the category list
-    categories = [genre[0] for genre in Book.query.with_entities(Book.genre).distinct()]
-    return render_template('categories.html', categories=categories)
+    # Get all unique genres for the category list (flatten genres into a list)
+    genres = db.session.query(Book.genre).distinct().all()
+    # Flatten the list and remove duplicates
+    unique_genres = set([genre for sublist in genres for genre in sublist[0]])
+    return render_template('categories.html', categories=sorted(unique_genres))
 
 @app.route('/categories/<category>')
 def category_books(category):
     # Get books for the selected category
-    books = Book.query.filter_by(genre=category).all()
+    books = Book.query.filter(Book.genre.any(category)).all()  # Filter books by genre in array
     return render_template('category_books.html', books=books, category=category)
+
 @app.route('/favorites')
 def favorites():
     if 'username' in session:
         user_id = session.get('user_id')
-        favorite_books = Favorite.query.filter_by(user_id=user_id).join(Book, Favorite.book_id == Book.id).all()
+        favorite_books = (
+            db.session.query(Favorite, Book)
+            .join(Book, Favorite.book_id == Book.id)
+            .filter(Favorite.user_id == user_id)
+            .all()
+        )
+
+        print(favorite_books)
         return render_template('favorites.html', favorite_books=favorite_books)
     else:
         return redirect(url_for('login', next=request.url))

@@ -121,13 +121,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for book in favorite_books %}
+                    {% for favorite, book in favorite_books %}
                     <tr>
-                        <td>{{ book.book_title }}</td>
-                        <td>{{ book.book_author }}</td>
-                        <td>{{ book.book_genre }}</td>
+                        <td>{{ book.title }}</td>  <!-- Corrected field name -->
+                        <td>{{ book.author }}</td>  <!-- Corrected field name -->
+                        <td>{{ ', '.join(book.genre) if book.genre else 'No genre' }}</td> <!-- Handling array of genres -->
                         <td>
-                            <form action="/favorites/remove/{{ book.id }}" method="POST">
+                            <form action="/favorites/remove/{{ favorite.id }}" method="POST">
                                 <button type="submit">Remove</button>
                             </form>
                         </td>

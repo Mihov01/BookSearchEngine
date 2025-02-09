@@ -188,12 +188,31 @@
                 <li>
                     <h3>{{ book.title }}</h3>
                     <p><strong>Author:</strong> {{ book.author }}</p>
-                    <p><strong>Genre:</strong> {{ book.genre }}</p>
+                    <p><strong>Genres:</strong> 
+                        {% if book.genre is string %}
+                            {% for genre in book.genre.split(',') %}
+                                <span>{{ genre.strip() }}</span>{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        {% elif book.genre is iterable %}
+                            {% for genre in book.genre %}
+                                <span>{{ genre }}</span>{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </p>
                     <form action="/favorites/add" method="POST">
                         <input type="hidden" name="book_id" value="{{ book.id }}">
                         <button type="submit">Add to Favorites</button>
                     </form>
                 </li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section id="popular-searches">
+            <h2>Popular Searches</h2>
+            <ul>
+                {% for search in popular_searches %}
+                <li>{{ search.search_query }} ({{ search.frequency }} times)</li>
                 {% endfor %}
             </ul>
         </section>

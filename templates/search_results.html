@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+    <title>Search Results - Book Haven</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        /* Header */
+        header {
+            background-color: #232f3e;
+            color: white;
+            padding: 20px 10%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8em;
+        }
+
+        nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 1em;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Main Section */
+        main {
+            padding: 20px 10%;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        /* Search Results Section */
+        #results {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #results h2 {
+            margin: 0 0 15px;
+            font-size: 1.5em;
+            color: #232f3e;
+        }
+
+        #results ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        #results li {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        #results li:hover {
+            transform: translateY(-5px);
+        }
+
+        #results li h3 {
+            margin: 0 0 5px;
+            color: #232f3e;
+        }
+
+        #results li p {
+            margin: 5px 0;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        #results li form {
+            margin-top: 10px;
+        }
+
+        #results li button {
+            padding: 10px 20px;
+            background-color: #232f3e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #results li button:hover {
+            background-color: #1a1f26;
+        }
+
+        /* Footer */
+        footer {
+            background-color: #232f3e;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: 30px;
+        }
+
+        footer p {
+            margin: 0;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Book Haven</h1>
+        <nav>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('categories') }}">Categories</a>
+            <a href="{{ url_for('favorites') }}">Favorites</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+            {% if username %}
+            <a href="{{ url_for('user_page') }}" class="user-circle">
+                {{ username[0].upper() }}
+            </a>
+            {% endif %}
+        </nav>
+    </header>
+    
+    <main>
+        <section id="results">
+            <h2>Search Results for "{{ query }}"</h2>
+            {% if results %}
+            <ul>
+                {% for result in results %}
+                <li>
+                    <h3><a href="{{ url_for('book_detail', book_id=result['_id']) }}">{{ result['_source']['title'] }}</a></h3>
+                    <p><strong>Author:</strong> {{ result['_source']['author'] }}</p>
+                    <p><strong>Genres:</strong> {{ result['_source']['genre'] | join(', ') }}</p>
+                    <p><strong>Description:</strong> {{ result['_source']['description'][:100] }}...</p>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No results found for "{{ query }}". Try searching with different keywords.</p>
+            {% endif %}
+        </section>
+    </main>
+    
+    <footer>
+        <p>&copy; 2024 Book Haven. All rights reserved.</p>
+    </footer>
+</body>
+</html>
