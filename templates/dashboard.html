@@ -7,189 +7,212 @@
     <title>Book Haven</title>
     <style>
         /* General Styles */
-        body {
-            font-family: 'Roboto', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            color: #333;
-        }
+     /* General Styles */
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
 
-        /* Header */
-        header {
-            background-color: #232f3e;
-            color: white;
-            padding: 20px 10%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+/* Header */
+header {
+    background-color: #232f3e;
+    color: white;
+    padding: 20px 10%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-        #popular-searches {
-            background: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-            text-align: center;
-        }
+header h1 {
+    margin: 0;
+    font-size: 1.8em;
+}
 
-        #popular-searches h2 {
-            color: #232f3e;
-            margin-bottom: 10px;
-        }
+nav {
+    display: flex;
+    gap: 20px;
+}
 
-        #popular-searches ul {
-            list-style: none;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
+nav a {
+    color: white;
+    text-decoration: none;
+    font-size: 1em;
+}
 
-        #popular-searches li a {
-            text-decoration: none;
-            color: #0073e6;
-            padding: 5px 10px;
-            background: #f1f8ff;
-            border-radius: 4px;
-            transition: background 0.3s;
-        }
+nav a:hover {
+    text-decoration: underline;
+}
 
-        #popular-searches li a:hover {
-            background: #cce4ff;
-        }
+/* Main Section */
+main {
+    padding: 20px 10%;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
 
-        header h1 {
-            margin: 0;
-            font-size: 1.8em;
-        }
+/* Search Section */
+#search-form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    flex-wrap: wrap; /* Responsive adjustment */
+}
 
-        nav {
-            display: flex;
-            gap: 20px;
-        }
+#search-form input,
+#search-form select,
+#search-form button {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1em;
+    outline: none;
+}
 
-        nav a {
-            color: white;
-            text-decoration: none;
-            font-size: 1em;
-        }
+#search-form input {
+    width: 300px;
+    flex: 1;
+}
 
-        nav a:hover {
-            text-decoration: underline;
-        }
+#search-form select {
+    cursor: pointer;
+    background-color: white;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
 
-        /* Main Section */
-        main {
-            padding: 20px 10%;
-            display: flex;
-            flex-direction: column;
-            gap: 40px;
-        }
+#search-form select:hover {
+    border-color: #232f3e;
+    box-shadow: 0 0 5px rgba(35, 47, 62, 0.5);
+}
 
-        /* Search Section */
-        #search {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
+#search-form select:focus {
+    border-color: #0073e6;
+    box-shadow: 0 0 8px rgba(0, 115, 230, 0.5);
+}
 
-        #search h2 {
-            margin: 0 0 15px;
-            font-size: 1.5em;
-            color: #232f3e;
-        }
+#search-form button {
+    background-color: #232f3e;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
 
-        #search form {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
+#search-form button:hover {
+    background-color: #1a1f26;
+}
 
-        #search input {
-            padding: 10px;
-            width: 400px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 1em;
-        }
+/* Popular Searches */
+#popular-searches {
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
 
-        #search button {
-            padding: 10px 20px;
-            background-color: #232f3e;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+#popular-searches h2 {
+    color: #232f3e;
+    margin-bottom: 10px;
+}
 
-        #search button:hover {
-            background-color: #1a1f26;
-        }
+#popular-searches ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
 
-        /* Recommendations Section */
-        #recommendations {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+#popular-searches li a {
+    text-decoration: none;
+    color: #0073e6;
+    padding: 5px 10px;
+    background: #f1f8ff;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
 
-        #recommendations h2 {
-            margin: 0 0 15px;
-            font-size: 1.5em;
-            color: #232f3e;
-        }
+#popular-searches li a:hover {
+    background: #cce4ff;
+}
 
-        #recommendations ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
+/* Recommendations */
+#recommendations {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
 
-        #recommendations li {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease-in-out;
-        }
+#recommendations ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
 
-        #recommendations li:hover {
-            transform: translateY(-5px);
-        }
+#recommendations li {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out;
+}
 
-        #recommendations li h3 {
-            margin: 0 0 5px;
-            color: #232f3e;
-        }
+#recommendations li:hover {
+    transform: translateY(-5px);
+}
 
-        #recommendations li p {
-            margin: 5px 0;
-            font-size: 0.9em;
-            color: #555;
-        }
+#recommendations li h3 {
+    margin: 0 0 5px;
+    color: #232f3e;
+}
 
-        /* Footer */
-        footer {
-            background-color: #232f3e;
-            color: white;
-            text-align: center;
-            padding: 10px 0;
-            margin-top: 30px;
-        }
+#recommendations li p {
+    margin: 5px 0;
+    font-size: 0.9em;
+    color: #555;
+}
 
-        footer p {
-            margin: 0;
-            font-size: 0.9em;
-        }
+/* Footer */
+footer {
+    background-color: #232f3e;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    margin-top: 30px;
+}
+
+footer p {
+    margin: 0;
+    font-size: 0.9em;
+}
+
+/* Responsive Design for Small Screens */
+@media (max-width: 600px) {
+    #search-form {
+        flex-direction: column;
+    }
+
+    #search-form input,
+    #search-form select,
+    #search-form button {
+        width: 100%;
+        margin: 5px 0;
+    }
+}
     </style>
 </head>
 <body>
@@ -209,13 +232,33 @@
     </header>
     
     <main>
-        <section id="search">
-            <h2>Find Your Next Favorite Book</h2>
-            <form action="/search" method="get">
-                <input type="text" name="query" placeholder="Search for books, authors, genres..." required>
-                <button type="submit">Search</button>
-            </form>
-        </section>
+        <form id="search-form" method="get">
+            <input type="text" name="query" placeholder="Search for books, authors, genres..." required>
+        
+            <!-- Language Dropdown -->
+            <select name="language">
+                <option value="">All Languages</option>
+                <option value="English">English</option>
+                <option value="Bulgarian">Bulgarian</option>
+                <option value="French">French</option>
+                <option value="Spanish">Spanish</option>
+            </select>
+        
+            <!-- Search Mode Dropdown -->
+            <select id="search-mode" name="search_mode">
+                <option value="basic">Basic Search</option>
+                <option value="natural">Natural Language Search</option>
+                <option value="advanced">Advanced Search</option>
+            </select>
+        
+            <!-- Advanced Operator Dropdown (Hidden by Default) -->
+            <select id="operator" name="operator" style="display: none;">
+                <option value="AND">AND (All terms must match)</option>
+                <option value="OR">OR (Any term can match)</option>
+            </select>
+        
+            <button type="submit">Search</button>
+        </form>
 
         <section id="popular-searches">
             <h2>Trending Searches</h2>
@@ -261,5 +304,29 @@
     <footer>
         <p>&copy; 2024 Book Haven. All rights reserved.</p>
     </footer>
+
+    <script>
+       document.getElementById("search-mode").addEventListener("change", function () {
+    const operatorDropdown = document.getElementById("operator");
+    if (this.value === "advanced") {
+        operatorDropdown.style.display = "inline-block"; // Show the operator dropdown
+    } else {
+        operatorDropdown.style.display = "none"; // Hide it for basic/natural search
+    }
+});
+
+document.getElementById("search-form").addEventListener("submit", function (event) {
+    const searchMode = document.getElementById("search-mode").value;
+
+    // Redirect based on the selected search mode
+    if (searchMode === "natural") {
+        this.action = "/natural_search";
+    } else if (searchMode === "advanced") {
+        this.action = "/advanced_search";
+    } else {
+        this.action = "/search";
+    }
+});
+    </script>
 </body>
 </html>

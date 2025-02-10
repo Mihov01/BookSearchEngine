@@ -206,28 +206,106 @@ def populate_elasticsearch_from_json():
 
     bulk(es, actions)
 
+
+
 # Search function using Elasticsearch
-def search_books(query):
-    log_search(query) 
+def search_books(query, language=None):
+    log_search(query)
+    
+    # Base query with 'must' condition
+    es_query = {
+        "bool": {
+            "must": [
+                {
+                    "multi_match": {
+                        "query": query,
+                        "fields": ["title^3", "description^2", "author", "genre"],
+                        "fuzziness": "AUTO",
+                        "analyzer": "synonym_analyzer"
+                    }
+                }
+            ]
+        }
+    }
+    
+    if language:
+        es_query["bool"]["filter"] = {  
+            "term": {"language.keyword": language}
+        }
+
+    # Elasticsearch request
     response = es.search(
         index="books",
-        body={
-            "query": {
-                "bool": {
-                    "should": [
-                        {
-                            "multi_match": {
-                                "query": query,
-                                "fields": ["title^3", "description^2", "author", "genre"],
-                                "fuzziness": "AUTO",
-                                "analyzer": "synonym_analyzer"
-                            }
-                        }
-                    ]
-                }
+        body={"query": es_query}
+    )
+    return response['hits']['hits']
+
+
+def natural_language_search(query_text):
+    log_search(query_text)  # ✅ Log the search query
+    
+    es_query = {
+        "query": {
+            "multi_match": {
+                "query": query_text,
+                "fields": ["title^3", "author^2", "description"],
+                "type": "best_fields",
+                "operator": "and"  # Prioritizes results matching multiple terms
             }
         }
-    )
+    }
+
+    # Perform the search
+    response = es.search(index="books", body=es_query)
+
+    # ✅ Fallback if no results found (tries with 'or' to broaden the search)
+    if not response['hits']['hits']:
+        es_query["query"]["multi_match"]["operator"] = "or"
+        response = es.search(index="books", body=es_query)
+
+    return response['hits']['hits']
+
+
+def advanced_search(query, operator="AND"):
+    log_search(query)  # ✅ Log the search query
+
+    # Split the query based on the operator
+    terms = [term.strip() for term in query.split(f" {operator} ")]
+
+    # Build the Elasticsearch query
+    if operator == "AND":
+        bool_query = {
+            "must": [
+                {
+                    "multi_match": {
+                        "query": term,
+                        "fields": ["title", "author", "description", "genre"]
+                    }
+                } for term in terms
+            ]
+        }
+    elif operator == "OR":
+        bool_query = {
+            "should": [
+                {
+                    "multi_match": {
+                        "query": term,
+                        "fields": ["title", "author", "description", "genre"]
+                    }
+                } for term in terms
+            ],
+            "minimum_should_match": 1
+        }
+    else:
+        raise ValueError(f"Unsupported operator: {operator}")
+
+    es_query = {
+        "query": {
+            "bool": bool_query
+        }
+    }
+
+    response = es.search(index="books", body=es_query)
     return response['hits']['hits']
 
 @app.before_first_request
@@ -292,9 +370,12 @@ def home():
 @app.route('/search', methods=['GET'])
 def search():
     query = request.args.get('query', '')
+    language = request.args.get('language', '')  # ✅ Get selected language
+
     if query:
-        search_results = search_books(query)
+        search_results = search_books(query, language=language)  # ✅ Pass language to search_books
         return render_template('search_results.html', query=query, results=search_results)
+
     return render_template('search_form.html')
 
 @app.route('/book/<int:book_id>')
@@ -332,6 +413,17 @@ def signup():
         return redirect(url_for('login'))
     return render_template('signup.html')
 
+@app.route('/advanced_search', methods=['GET'])
+def advanced_search_route():
+    query = request.args.get('query', '')
+    operator = request.args.get('operator', 'AND')  # Default to AND
+
+    if query:
+        search_results = advanced_search(query, operator=operator)
+        return render_template('search_results.html', query=query, results=search_results)
+
+    return render_template('search_form.html')
+
 @app.route('/dashboard')
 def dashboard():
     if 'username' in session:
@@ -348,10 +440,12 @@ def dashboard():
     return redirect(url_for('login'))
 
 def get_recommended_books(user):
-    latest_search = SearchHistory.query.order_by(SearchHistory.search_date.desc()).first()
+    # Get the latest search query from the user's history
+    latest_search = SearchHistory.query.filter_by(user_id=user.id).order_by(SearchHistory.search_date.desc()).first()
     keyword = latest_search.search_query if latest_search else "Education"
 
     if isinstance(keyword, str):  # Ensure keyword is a string
+        # Step 1: Use Elasticsearch to find similar books
         query = {
             "query": {
                 "more_like_this": {
@@ -363,16 +457,35 @@ def get_recommended_books(user):
             }
         }
         response = es.search(index=index_name, body=query)
-        recommended_books = [{
-            "title": hit["_source"].get("title"),
-            "author": hit["_source"].get("author"),
-            "description": hit["_source"].get("description")
-        } for hit in response["hits"]["hits"]]
+
+        # Step 2: Extract book titles from Elasticsearch hits
+        book_titles = [hit["_source"].get("title") for hit in response["hits"]["hits"] if hit["_source"].get("title")]
+
+        # Step 3: Query the database to get full book entries by title
+        recommended_books = Book.query.filter(Book.title.in_(book_titles)).all()
+
     else:
         recommended_books = []
 
     return recommended_books
 
+
+
+@app.route('/natural_search', methods=['GET'])
+def natural_search():
+    query = request.args.get('query', '')
+    language = request.args.get('language', '')
+
+    if query:
+        search_results = natural_language_search(query)
+
+        # Apply language filter if selected
+        if language:
+            search_results = [result for result in search_results if result['_source'].get('language') == language]
+
+        return render_template('search_results.html', query=query, results=search_results)
+
+    return render_template('search_form.html')
 
 @app.route('/logout')
 def logout():
